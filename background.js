@@ -123,7 +123,6 @@ function llmRewrite(article, settings) {
         { role: "user", content: userText },
       ],
       max_completion_tokens: 4000,
-      temperature: 0.3,
     }),
   })
     .then(checkJson)
