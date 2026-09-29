@@ -346,6 +346,33 @@ function requestChunk(tabId, index) {
 
 /* ---------- entry points ---------- */
 
+/* When the extension is reloaded, declared content scripts are evicted from
+ * already-open tabs. If the first message to a tab fails with "Could not
+ * establish connection. Receiving end does not exist.", inject the content
+ * script ourselves and retry once instead of showing a dead error. */
+function ensureContentScript(tabId) {
+  return chrome.scripting
+    .executeScript({
+      target: { tabId: tabId },
+      files: ["vendor/readability.js", "content.js"],
+    })
+    .catch(function () {
+      throw new Error("Refresh the page and try again.");
+    });
+}
+
+function extractFromTab(tabId) {
+  return chrome.tabs.sendMessage(tabId, { type: "CR_EXTRACT" }).catch(function (err) {
+    var msg = (err && err.message) || "";
+    if (/could not establish|receiving end/i.test(msg)) {
+      return ensureContentScript(tabId).then(function () {
+        return chrome.tabs.sendMessage(tabId, { type: "CR_EXTRACT" });
+      });
+    }
+    throw err;
+  });
+}
+
 function readActiveTab() {
   return chrome.tabs
     .query({ active: true, currentWindow: true })
@@ -354,15 +381,13 @@ function readActiveTab() {
       if (!tab || !tab.id || !/^https?:/.test(tab.url || "")) {
         throw new Error("Open a normal web page first.");
       }
-      return chrome.tabs
-        .sendMessage(tab.id, { type: "CR_EXTRACT" })
-        .then(function (resp) {
-          if (!resp || !resp.ok || !resp.article || !resp.article.text) {
-            throw new Error("Could not find article text on this page.");
-          }
-          startReading(tab.id, resp.article);
-          return { ok: true };
-        });
+      return extractFromTab(tab.id).then(function (resp) {
+        if (!resp || !resp.ok || !resp.article || !resp.article.text) {
+          throw new Error("Could not find article text on this page.");
+        }
+        startReading(tab.id, resp.article);
+        return { ok: true };
+      });
     });
 }
 
@@ -376,8 +401,7 @@ chrome.runtime.onInstalled.addListener(function () {
 
 chrome.contextMenus.onClicked.addListener(function (info, tab) {
   if (info.menuItemId === "cr-read" && tab && tab.id) {
-    chrome.tabs
-      .sendMessage(tab.id, { type: "CR_EXTRACT" })
+    extractFromTab(tab.id)
       .then(function (resp) {
         if (resp && resp.ok && resp.article && resp.article.text) {
           startReading(tab.id, resp.article);

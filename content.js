@@ -84,6 +84,7 @@
     ".cr-btn.main { width: 42px; height: 42px; background: #2563eb; border-color: #2563eb; }",
     ".cr-btn.main:hover { background: #1d4ed8; }",
     ".cr-btn svg { width: 16px; height: 16px; fill: currentColor; }",
+    ".cr-btn.skip svg { width: 23px; height: 23px; }",
     ".cr-btn.main svg { width: 18px; height: 18px; }",
     ".cr-mid { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1 1 auto; }",
     ".cr-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis;",
@@ -101,6 +102,12 @@
     '<svg viewBox="0 0 16 16"><path d="M4 2l9 6-9 6z"/></svg>';
   var ICON_PAUSE =
     '<svg viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z"/></svg>';
+  var ICON_BACK =
+    '<svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z" fill="currentColor"/>' +
+    '<text x="12" y="16.7" text-anchor="middle" font-size="7.2" font-weight="700" font-family="system-ui, sans-serif" fill="currentColor">15</text></svg>';
+  var ICON_FWD =
+    '<svg viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.3 0-6 2.7-6 6s2.7 6 6 6 6-2.7 6-6h2c0 4.4-3.6 8-8 8s-8-3.6-8-8 3.6-8 8-8z" fill="currentColor"/>' +
+    '<text x="12" y="16.7" text-anchor="middle" font-size="7.2" font-weight="700" font-family="system-ui, sans-serif" fill="currentColor">15</text></svg>';
 
   function buildPlayer(title) {
     closePlayer();
@@ -112,11 +119,15 @@
     var pill = document.createElement("div");
     pill.className = "cr-pill";
     pill.innerHTML =
+      '<button class="cr-btn skip" data-cmd="back" title="Back 15s (Left arrow)">' +
+      ICON_BACK +
+      "</button>" +
       '<button class="cr-btn main" data-cmd="toggle" title="Play/Pause (Space)">' +
       ICON_PLAY +
       "</button>" +
-      '<button class="cr-btn" data-cmd="back" title="Back 15s">&#8722;15</button>' +
-      '<button class="cr-btn" data-cmd="fwd" title="Forward 15s">+15</button>' +
+      '<button class="cr-btn skip" data-cmd="fwd" title="Forward 15s (Right arrow)">' +
+      ICON_FWD +
+      "</button>" +
       '<div class="cr-mid">' +
       '<div class="cr-title"></div>' +
       '<div class="cr-bar" title="Seek"><div class="cr-fill"></div></div>' +
@@ -169,6 +180,15 @@
     }
     if (cmd === "speed") {
       setSpeed(speed >= 4 ? 0.5 : speed + 0.5); // click cycles up, wraps around
+      return;
+    }
+    // The audio worker understands "seek" with a value; map skip buttons onto it.
+    if (cmd === "back") {
+      sendCmd("seek", -15);
+      return;
+    }
+    if (cmd === "fwd") {
+      sendCmd("seek", 15);
       return;
     }
     sendCmd(cmd);
