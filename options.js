@@ -8,9 +8,10 @@
 var DEFAULTS = {
   provider: "openai",
   openaiKey: "",
-  openaiLlmModel: "gpt-4o-mini",
-  openaiTtsModel: "tts-1",
-  openaiVoice: "alloy",
+  openaiLlmModel: "gpt-6-luna",
+  openaiTtsModel: "gpt-4o-mini-tts",
+  openaiVoice: "marin",
+  openaiVoiceInstructions: "",
   geminiKey: "",
   geminiModel: "gemini-2.0-flash",
   geminiTtsModel: "gemini-2.0-flash",
@@ -109,7 +110,7 @@ function testConnection() {
     body: JSON.stringify({
       model: model,
       messages: [{ role: "user", content: "say hi" }],
-      max_tokens: 5,
+      max_completion_tokens: 5,
     }),
   })
     .then(function (r) {

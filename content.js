@@ -11,8 +11,15 @@
   window.__clearReaderLoaded = true;
 
   var HOST_ID = "clearreader-player-host";
-  var SPEEDS = [1, 1.25, 1.5, 2];
-  var speedIdx = 0;
+  var speed = 1;
+
+  function setSpeed(v) {
+    v = Math.round(Number(v) * 2) / 2; // snap to 0.5 steps
+    if (!isFinite(v)) v = 1;
+    speed = Math.min(4, Math.max(0.5, v));
+    if (els.speed) els.speed.textContent = speed + "x";
+    sendCmd("speed", speed);
+  }
 
   /* ---------- article extraction ---------- */
 
@@ -161,9 +168,7 @@
       return;
     }
     if (cmd === "speed") {
-      speedIdx = (speedIdx + 1) % SPEEDS.length;
-      if (els.speed) els.speed.textContent = SPEEDS[speedIdx] + "x";
-      sendCmd("speed", SPEEDS[speedIdx]);
+      setSpeed(speed >= 4 ? 0.5 : speed + 0.5); // click cycles up, wraps around
       return;
     }
     sendCmd(cmd);
@@ -222,6 +227,12 @@
       } else if (ev.code === "ArrowRight") {
         ev.preventDefault();
         sendCmd("seek", 15);
+      } else if (ev.code === "BracketLeft") {
+        ev.preventDefault();
+        setSpeed(speed - 0.5);
+      } else if (ev.code === "BracketRight") {
+        ev.preventDefault();
+        setSpeed(speed + 0.5);
       } else if (ev.code === "Escape") {
         handleCommand("close");
       }
@@ -239,11 +250,7 @@
         break;
       case "CR_PLAYER_SHOW":
         buildPlayer(msg.title);
-        if (typeof msg.speed === "number") {
-          var i = SPEEDS.indexOf(msg.speed);
-          speedIdx = i >= 0 ? i : 0;
-          if (els.speed) els.speed.textContent = SPEEDS[speedIdx] + "x";
-        }
+        if (typeof msg.speed === "number") setSpeed(msg.speed);
         break;
       case "CR_STATUS":
         if (els.status) {

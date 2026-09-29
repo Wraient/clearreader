@@ -32,7 +32,7 @@ key works without spending real tokens.
 - Click the toolbar icon, then **Read this article**
 - Right-click a page and choose **Read article aloud**
 - The floating player appears bottom-right: play/pause, -15s / +15s,
-  speed cycler (1x, 1.25x, 1.5x, 2x), clickable progress bar, close
+  speed control (click cycles +0.5, wraps at 4x), clickable progress bar, close
 
 ## Keyboard shortcuts
 
@@ -42,6 +42,7 @@ key works without spending real tokens.
 | `Alt+Shift+P` | Play / pause |
 | `Space` (player open) | Play / pause |
 | `Left` / `Right` (player open) | Seek 15s back / forward |
+| `[` / `]` (player open) | Speed down / up by 0.5x |
 | `Esc` (player open) | Close the player |
 
 Shortcuts do nothing while you are typing in a text field.
@@ -52,10 +53,15 @@ Shortcuts do nothing while you are typing in a text field.
    cloned DOM into title, byline, and article text. Falls back to selected
    text, then body text.
 2. **Script** (`background.js`): the article (truncated to ~12000 chars) goes
-   to your chosen LLM with a prompt that produces a listenable script.
+   to your chosen LLM with a prompt that keeps prose word for word and only
+   rewrites what is hard to listen to: tables become spoken comparisons,
+   `[Image: ...]` markers become narrations, code blocks become summaries.
+   Newer models (e.g. `gpt-6-luna`) follow the verbatim instruction closely;
+   smaller ones paraphrase more.
 3. **Voice** (`background.js`): the script is split at sentence boundaries
    into <=4000 char chunks and synthesized one chunk at a time, one ahead
-   prefetched.
+   prefetched. Recommended TTS setup: `gpt-4o-mini-tts` with voice `marin`
+   or `cedar`; the optional voice-instructions field steers tone.
 4. **Play** (`offscreen.html` / `offscreen.js`): audio must live in an
    offscreen document because MV3 service workers cannot hold audio. A single
    Audio element plays the queue in order and reports progress.

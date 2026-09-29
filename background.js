@@ -11,9 +11,10 @@
 var DEFAULTS = {
   provider: "openai", // openai | gemini | custom
   openaiKey: "",
-  openaiLlmModel: "gpt-4o-mini",
-  openaiTtsModel: "tts-1",
-  openaiVoice: "alloy",
+  openaiLlmModel: "gpt-6-luna",
+  openaiTtsModel: "gpt-4o-mini-tts",
+  openaiVoice: "marin",
+  openaiVoiceInstructions: "",
   geminiKey: "",
   geminiModel: "gemini-2.0-flash",
   geminiTtsModel: "gemini-2.0-flash",
@@ -37,17 +38,18 @@ function getSettings() {
 /* ---------- LLM script pass ---------- */
 
 var SYSTEM_PROMPT = [
-  "Rewrite the web article below as a listenable script for text to speech.",
-  "Rules. Cut navigation menus, ads, cookie banners, signup prompts, and other cruft.",
-  "Keep the article's real content in its original order.",
-  "Turn every table into a short spoken comparison of what matters, never read it cell by cell.",
-  "Describe diagrams, charts, and images using their alt text, captions, and the surrounding prose,",
-  "for example say what rises or falls in a chart.",
-  "Never skip an [Image: ...] marker. Narrate each one in one or two spoken sentences.",
-  "Summarize each code block in one or two plain sentences instead of reading the code.",
+  "Prepare the web article below for text to speech.",
+  "Keep prose paragraphs word for word exactly as written.",
+  "If a single sentence would sound wrong read aloud, fix only that sentence, minimally.",
+  "Never paraphrase ordinary prose for style.",
+  "Only rewrite these hard to listen to elements:",
+  "tables become short spoken comparisons of what matters, never read cell by cell,",
+  "each [Image: ...] marker becomes a one or two sentence narration of what it shows,",
+  "for example say what rises or falls in a chart, never skip a marker,",
+  "code blocks become one or two plain sentences instead of reading the code aloud.",
+  "Cut navigation menus, ads, cookie banners, signup prompts, and other page cruft.",
   "You may use short section headers.",
   "Output plain text only: no markdown, no bullet characters, no asterisks, no emojis.",
-  "Write sentences that sound natural when read aloud.",
 ].join(" ");
 
 function truncateForLlm(text, max) {
@@ -120,7 +122,7 @@ function llmRewrite(article, settings) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userText },
       ],
-      max_tokens: 4000,
+      max_completion_tokens: 4000,
       temperature: 0.3,
     }),
   })
@@ -210,21 +212,29 @@ function synthesizeChunk(text, settings) {
 
   var base = "https://api.openai.com";
   var key = settings.openaiKey;
-  var ttsModel = settings.openaiTtsModel;
+  var ttsModel = settings.openaiTtsModel || "gpt-4o-mini-tts";
   if (settings.provider === "custom") {
     base = (settings.customBaseUrl || "").replace(/\/+$/, "");
     key = settings.customKey;
     ttsModel = settings.customTtsModel;
   }
+  var ttsBody = {
+    model: ttsModel,
+    voice: settings.openaiVoice || "marin",
+    input: text,
+    response_format: "mp3",
+  };
+  // Tone/style steering is only supported by gpt-4o-mini-tts.
+  if (
+    settings.openaiVoiceInstructions &&
+    /gpt-4o-mini-tts/.test(ttsModel)
+  ) {
+    ttsBody.instructions = settings.openaiVoiceInstructions;
+  }
   return fetch(base + "/v1/audio/speech", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
-    body: JSON.stringify({
-      model: ttsModel || "tts-1",
-      voice: settings.openaiVoice || "alloy",
-      input: text,
-      response_format: "mp3",
-    }),
+    body: JSON.stringify(ttsBody),
   }).then(function (resp) {
     if (!resp.ok) {
       return resp.text().then(function (body) {

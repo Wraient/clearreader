@@ -42,15 +42,20 @@
     <input type="password" id="openaiKey" autocomplete="off" placeholder="sk-...">
     <div class="row">
       <div><label for="openaiLlmModel">Chat model (script writing)</label>
-        <input type="text" id="openaiLlmModel" placeholder="gpt-4o-mini"></div>
+        <input type="text" id="openaiLlmModel" placeholder="gpt-6-luna"></div>
       <div><label for="openaiTtsModel">TTS model</label>
-        <input type="text" id="openaiTtsModel" placeholder="tts-1"></div>
+        <input type="text" id="openaiTtsModel" placeholder="gpt-4o-mini-tts"></div>
     </div>
     <label for="openaiVoice">Voice</label>
     <select id="openaiVoice">
-      <option>alloy</option><option>echo</option><option>fable</option>
-      <option>onyx</option><option>nova</option><option>shimmer</option>
+      <option>marin</option><option>cedar</option><option>alloy</option>
+      <option>ash</option><option>ballad</option><option>coral</option>
+      <option>echo</option><option>fable</option><option>nova</option>
+      <option>onyx</option><option>sage</option><option>shimmer</option>
+      <option>verse</option>
     </select>
+    <label for="openaiVoiceInstructions">Voice instructions (gpt-4o-mini-tts only, optional)</label>
+    <input type="text" id="openaiVoiceInstructions" placeholder="Speak in a calm, clear tone for technical articles.">
   </div>
 
   <div class="prov" id="prov-gemini">
